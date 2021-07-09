@@ -29,3 +29,54 @@ class Log(db.Model):
     userEmail = db.Column(db.String(30), db.ForeignKey('user.email'))  # 外键
     log = db.Column(db.String(50))
     date = db.Column(db.String(50))
+
+#公司表
+class Company(db.Model):
+    __tablename__ = 'company'
+    id = db.Column(db.String(30),primary_key=True)
+    name = db.Column(db.String(50))
+    field = db.Column(db.String(50))
+    formDate = db.Column(db.Date)
+    registeredCapital = db.Column(db.String(20))
+    tel = db.Column(db.String(15))
+    InventionRating = db.Column(db.String(5))
+    webSite = db.Column(db.String(100))
+    legalPersonType = db.Column(db.Boolean)
+    legalPerson = db.Column(db.String(50))
+    registeredStatus = db.Column(db.String(10))
+    CEO = db.Column(db.String(10))
+    manager = db.Column(db.String(10))
+    address = db.Column(db.String(50))
+    businessScope = db.Column(db.String(1000))
+    introduction = db.Column(db.String(1000))
+    financing = db.Column(db.Boolean)
+    firstTag = db.Column(db.String(20))
+    secondTag = db.Column(db.String(40))
+    thirdTag = db.Column(db.String(60))
+
+#自然人表
+class Person(db.Model):
+    __tablename__ = 'person'
+    id = db.Column(db.Integer,primary_key=True)
+    name = db.Column(db.String(20))
+    picture = db.Column(db.String(150))
+    introduction = db.Column(db.String(1000))
+
+#团队信息表
+class Team(db.Model):
+    __tablename__ = 'Team'
+    id = db.Column(db.Integer,primary_key=True,autoincrement=True)
+    personId = db.Column(db.Integer,db.ForeignKey('person.id'))
+    companyId = db.Column(db.String(30),db.ForeignKey('company.id'))
+
+#发明信息表
+class Invention(db.Model):
+    id = db.Column(db.String(30),primary_key=True)
+    name = db.Column(db.String(50))
+    applyDate = db.Column(db.Date)
+    applyPerson = db.Column(db.String(30),db.ForeignKey('company.id'))
+    inventor = db.Column(db.String(20))
+    lawStatus = db.Column(db.String(10))
+    abstract = db.Column(db.String(1500))
+    fullText = db.Column(db.String(100))
+    publishDate = db.Column(db.Date)
