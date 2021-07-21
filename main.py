@@ -6,7 +6,7 @@
 # @Software: PyCharm
 
 
-from flask import Flask, g, send_from_directory
+from flask import Flask, g, send_from_directory,jsonify
 from flask import request
 
 from utils.middlewares import jwt_authentication
@@ -16,7 +16,7 @@ from utils import jwt_util
 from flask import make_response
 from dao import config
 from dao.exts import db
-from dao.models import Company
+from dao.models import Company,Invention
 import time
 
 app = Flask(__name__)
@@ -42,12 +42,48 @@ app.before_request(jwt_authentication)
 @app.route('/')
 def index():
     company = Company()
-    company.id = 'asdzz'
+    company.id = 'asdzzzzz'
+    company.logo = 'asdzzzzzzzz'
     db.session.add(company)
     db.session.commit()
     return "Hello World"
 
+@app.route('/getInventionById')
+def getInventionById():
+    inventionId = request.args.get('id');
+    result = Invention.query.get(inventionId)
+    data = {'id':result.id,'name':result.name,'applyDate':result.applyDate,'applyPerson':result.applyPerson,
+            'inventor':result.inventor,'lawStatus':result.lawStatus,'abstract':result.abstract,'fullText':result.fullText,
+            'publishDate':result.publishDate}
+    #print(jsonify(data))
+    return jsonify(data)
 
+@app.route('/hotSearch')
+def hotSearch():
+    sql = 'select * from company order by searchCount desc limit 28'
+    result = db.session.execute(sql)
+    data = []
+    for company in result:
+        temp = {'id':company.id,'name':company.name,'field':company.field,'formDate':company.formDate,'registerCapital':company.registeredCapital,
+                'tel':company.tel,'inventionRating':company.InventionRating,'webSite':company.webSite,'legalPersonType':company.legalPersonType,
+                'legalPerson':company.legalPerson,'registerStatus':company.registeredStatus,'CEO':company.CEO,'manager':company.manager,
+                'address':company.address,'businessScope':company.businessScope,'introduction':company.introduction,'financing':company.financing,
+                'firstTag':company.firstTag,'secondTag':company.secondTag,'thirdTag':company.thirdTag,'searchCount':company.searchCount,'logo':company.logo}
+        data.append(temp)
+    print(jsonify(data))
+    return jsonify(data)
+
+@app.route('/getCompanyById')
+def getCompanyById():
+    companyId = request.args.get('id');
+    company = Invention.query.get(companyId)
+    data = {'id':company.id,'name':company.name,'field':company.field,'formDate':company.formDate,'registerCapital':company.registeredCapital,
+            'tel':company.tel,'inventionRating':company.InventionRating,'webSite':company.webSite,'legalPersonType':company.legalPersonType,
+            'legalPerson':company.legalPerson,'registerStatus':company.registeredStatus,'CEO':company.CEO,'manager':company.manager,
+            'address':company.address,'businessScope':company.businessScope,'introduction':company.introduction,'financing':company.financing,
+            'firstTag':company.firstTag,'secondTag':company.secondTag,'thirdTag':company.thirdTag,'searchCount':company.searchCount,'logo':company.logo}
+    print(jsonify(data))
+    return jsonify(data)
 # @app.route('/login', methods=['POST'])
 # def login():
 #     json_data = json.loads(request.get_data().decode("utf-8"))
@@ -72,7 +108,7 @@ def index():
     #         response.headers['token'] = jwt
     #         return response
 
-    return "账号或密码错误", 401  # 后端返回401状态码，前端收到后会自动跳到登陆页面
+    # return "账号或密码错误", 401  # 后端返回401状态码，前端收到后会自动跳到登陆页面
 
 
 # @app.route('/register', methods=['POST'])

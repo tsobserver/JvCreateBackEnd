@@ -54,6 +54,7 @@ class Company(db.Model):
     secondTag = db.Column(db.String(40))
     thirdTag = db.Column(db.String(60))
     searchCount = db.Column(db.Integer)
+    logo = db.Column(db.String(255))
 
 #自然人表
 class Person(db.Model):
