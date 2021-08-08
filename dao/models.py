@@ -70,6 +70,7 @@ class Team(db.Model):
     id = db.Column(db.Integer,primary_key=True,autoincrement=True)
     personId = db.Column(db.Integer,db.ForeignKey('person.id'))
     companyId = db.Column(db.String(30),db.ForeignKey('company.id'))
+    position = db.Column(db.String(30))
 
 #发明信息表
 class Invention(db.Model):
@@ -110,8 +111,10 @@ class Change(db.Model):
     __tablename__ = 'change'
     id = db.Column(db.Integer,primary_key=True,autoincrement=True)
     date = db.Column(db.Date)
-    content = db.Column(db.String(100))
+    changeItem = db.Column(db.String(100))
     companyId = db.Column(db.String(30), db.ForeignKey('company.id'))
+    beforeChange = db.Column(db.String(255))
+    afterChange = db.Column(db.String(255))
 
 #产品服务表
 class Product(db.Model):
