@@ -105,7 +105,7 @@ def getCompanyById():
 @app.route('/invention')
 def getInventionsByCompanyId():
     companyId = request.args.get('id')
-    sql = 'select * from invention where applyPerson="' + companyId + '";'
+    sql = 'select * from invention where applyPerson="' + companyId + '" order by applyDate desc;'
     result = db.session.execute(sql)
     ret = []
     for invention in result:
@@ -140,7 +140,7 @@ def getInventionDetail():
 @app.route('/stock')
 def getStocksByCompanyId():
     companyId = request.args.get('id')
-    sql = 'select * from stock where companyId="' + companyId + '";'
+    sql = 'select * from stock where companyId="' + companyId + '" order by `date` desc;'
     result = db.session.execute(sql)
     ret = []
     for stock in result:
@@ -163,7 +163,7 @@ def getStocksByCompanyId():
 @app.route('/change')
 def getChangesByCompanyId():
     companyId = request.args.get('id')
-    sql = 'select * from `change` where companyId="' + companyId + '";'
+    sql = 'select * from `change` where companyId="' + companyId + '" order by `date` desc;'
     result = db.session.execute(sql)
     ret = []
     for change in result:
@@ -180,7 +180,7 @@ def getChangesByCompanyId():
 @app.route('/financing')
 def getFinancingByCompanyId():
     companyId = request.args.get('id')
-    sql = 'select * from invest where companyId="' + companyId + '";'
+    sql = 'select * from invest where companyId="' + companyId + '" order by `date` desc;'
     result = db.session.execute(sql)
     ret = []
     for invest in result:
@@ -190,9 +190,9 @@ def getFinancingByCompanyId():
         if invest.investor:
             content.append('投资者：' + invest.investor)
         if invest.capital:
-            content.append(invest.capital)
+            content.append('金额：' + invest.capital)
         if invest.FA:
-            content.append(invest.FA)
+            content.append('融资顾问：' + invest.FA)
         temp = {
             'title': str(invest.date),
             'content': content
@@ -221,7 +221,7 @@ def getCustomersByCompanyId():
 @app.route('/legalCase')
 def getLegalCasesByCompanyId():
     companyId = request.args.get('id')
-    sql = 'select * from legalcase where companyId="' + companyId + '";'
+    sql = 'select * from legalcase where companyId="' + companyId + '" order by publishDate desc;'
     result = db.session.execute(sql)
     ret = []
     for legalcase in result:
@@ -245,7 +245,7 @@ def getLegalCasesByCompanyId():
 # 经营状况-公司财务
 def getFinanceByCompanyId():
     companyId = request.args.get('id')
-    sql = 'select * from finance where companyId="' + companyId + '";'
+    sql = 'select * from finance where companyId="' + companyId + '" order by year desc;'
     result = db.session.execute(sql)
     ret = []
     for finance in result:
@@ -263,7 +263,7 @@ def getFinanceByCompanyId():
 # 经营状况-招聘信息
 def getEmployByCompanyId():
     companyId = request.args.get('id')
-    sql = 'select * from employ where companyId="' + companyId + '";'
+    sql = 'select * from employ where companyId="' + companyId + '" order by `date` desc;'
     result = db.session.execute(sql)
     ret = []
     for employ in result:
@@ -284,7 +284,7 @@ def getEmployByCompanyId():
 # 经营状况-资质证书
 def getQualificationByCompanyId():
     companyId = request.args.get('id')
-    sql = 'select * from qualification where companyId="' + companyId + '";'
+    sql = 'select * from qualification where companyId="' + companyId + '" order by StartDate desc;'
     result = db.session.execute(sql)
     ret = []
     for qualification in result:
@@ -304,7 +304,7 @@ def getQualificationByCompanyId():
 # 经营状况-行政许可
 def getAdminByCompanyId():
     companyId = request.args.get('id')
-    sql = 'select * from adminlicense where companyId="' + companyId + '";'
+    sql = 'select * from adminlicense where companyId="' + companyId + '" order by StartDate desc;'
     result = db.session.execute(sql)
     ret = []
     for adminlicense in result:
