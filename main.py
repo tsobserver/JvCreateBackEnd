@@ -6,9 +6,9 @@
 # @Software: PyCharm
 
 
-from flask import Flask, g, send_from_directory,jsonify
+from flask import Flask, g, send_from_directory, jsonify
 from flask import request
-
+from string import Template
 from utils.middlewares import jwt_authentication
 import json
 import utils.mail
@@ -16,7 +16,7 @@ from utils import jwt_util
 from flask import make_response
 from dao import config
 from dao.exts import db
-from dao.models import Company,Invention
+from dao.models import Company, Invention
 import time
 
 app = Flask(__name__)
@@ -38,25 +38,11 @@ app.before_request(jwt_authentication)
 #     db.session.commit()
 #     pass
 
-
+# for test
 @app.route('/')
 def index():
-    company = Company()
-    company.id = 'asdzzzzz'
-    company.logo = 'asdzzzzzzzz'
-    db.session.add(company)
-    db.session.commit()
     return "Hello World"
 
-@app.route('/getInventionById')
-def getInventionById():
-    inventionId = request.args.get('id');
-    result = Invention.query.get(inventionId)
-    data = {'id':result.id,'name':result.name,'applyDate':result.applyDate,'applyPerson':result.applyPerson,
-            'inventor':result.inventor,'lawStatus':result.lawStatus,'abstract':result.abstract,'fullText':result.fullText,
-            'publishDate':result.publishDate}
-    #print(jsonify(data))
-    return jsonify(data)
 
 @app.route('/hotSearch')
 def hotSearch():
@@ -64,163 +50,312 @@ def hotSearch():
     result = db.session.execute(sql)
     data = []
     for company in result:
-        temp = {'id':company.id,'name':company.name,'field':company.field,'formDate':company.formDate,'registerCapital':company.registeredCapital,
-                'tel':company.tel,'inventionRating':company.InventionRating,'webSite':company.webSite,'legalPersonType':company.legalPersonType,
-                'legalPerson':company.legalPerson,'registerStatus':company.registeredStatus,'CEO':company.CEO,'manager':company.manager,
-                'address':company.address,'businessScope':company.businessScope,'introduction':company.introduction,'financing':company.financing,
-                'firstTag':company.firstTag,'secondTag':company.secondTag,'thirdTag':company.thirdTag,'searchCount':company.searchCount,'logo':company.logo}
+        # 求 invention_count
+        invention_count = 0
+        sql = 'select count(DISTINCT invention.id) num from invention where applyPerson="' + company.id + '";'
+        result = db.session.execute(sql).first()
+        if result and result[0]:
+            invention_count = result[0]
+        temp = {'id': company.id, 'companyName': company.name, 'field': company.field, 'formDate': company.formDate,
+                'registeredCapital': company.registeredCapital,
+                'tel': company.tel, 'inventionRating': company.InventionRating, 'webSite': company.webSite,
+                'legalPersonType': company.legalPersonType,
+                'legalPerson': company.legalPerson, 'registerStatus': company.registeredStatus, 'CEO': company.CEO,
+                'manager': company.manager,
+                'inventionCount': invention_count,
+                'address': company.address, 'businessScope': company.businessScope,
+                'introduction': company.introduction, 'financing': company.financing,
+                'firstTag': company.firstTag, 'secondTag': company.secondTag, 'thirdTag': company.thirdTag,
+                'searchCount': company.searchCount, 'companyPic': company.logo}
         data.append(temp)
-    print(jsonify(data))
     return jsonify(data)
 
-@app.route('/getCompanyById')
+
+@app.route('/companyDetail')
 def getCompanyById():
-    companyId = request.args.get('id');
-    company = Invention.query.get(companyId)
-    data = {'id':company.id,'name':company.name,'field':company.field,'formDate':company.formDate,'registerCapital':company.registeredCapital,
-            'tel':company.tel,'inventionRating':company.InventionRating,'webSite':company.webSite,'legalPersonType':company.legalPersonType,
-            'legalPerson':company.legalPerson,'registerStatus':company.registeredStatus,'CEO':company.CEO,'manager':company.manager,
-            'address':company.address,'businessScope':company.businessScope,'introduction':company.introduction,'financing':company.financing,
-            'firstTag':company.firstTag,'secondTag':company.secondTag,'thirdTag':company.thirdTag,'searchCount':company.searchCount,'logo':company.logo}
-    print(jsonify(data))
+    companyId = request.args.get('id')
+    company = Company.query.get(companyId)
+    if company is None:
+        return '404'
+    # 增加一次访问量
+    company.searchCount = company.searchCount + 1
+    db.session.commit()
+    # 求发明数
+    inventionNum = 0
+    sql = 'select count(DISTINCT invention.id) num from invention where applyPerson="' + companyId + '";'
+    result = db.session.execute(sql).first()
+    if result and result[0]:
+        inventionNum = result[0]
+    data = {'id': company.id, 'companyName': company.name, 'major': company.field,
+            'companyRegisterDate': str(company.formDate),
+            'companyRegisterMoney': company.registeredCapital,
+            'phone': company.tel, 'level': company.InventionRating,
+            'website': company.webSite, 'inventionNum': inventionNum,
+            'legalPersonType': company.legalPersonType,
+            'legalPerson': company.legalPerson,
+            'registerStatus': company.registeredStatus, 'CEO': company.CEO,
+            'manager': company.manager, 'address': company.address,
+            'businessScope': company.businessScope, 'introduction': company.introduction,
+            'invest': company.financing, 'firstTag': company.firstTag,
+            'secondTag': company.secondTag, 'thirdTag': company.thirdTag,
+            'searchCount': company.searchCount, 'logo': company.logo}
     return jsonify(data)
-# @app.route('/login', methods=['POST'])
-# def login():
-#     json_data = json.loads(request.get_data().decode("utf-8"))
-#     email = json_data.get('email')
-#     upwd = json_data.get('password')
-#     user = User.query.get(email)  # 主键查询
-#     if user is not None:
-#         if user.password == upwd:
-#             jwt = jwt_util.create_token(email)
-#             response = make_response({'email': email, 'succMsg': '欢迎用户：' + user.username})
-#             response.headers['token'] = jwt
-#             make_log(userEmail=email, log='登陆AIDrug')
-#             return response
-
-    # sql = 'select * from user where email = "'+email+'" and password = "'+upwd+'";'
-    # result = db.session.execute(sql)
-    # for user in result:
-    #     if user is not None:
-    #         account_id = user.id
-    #         jwt = jwt_util.create_token(account_id, email)
-    #         response = make_response({'email': email, 'succMsg': '欢迎用户：' + user.username})
-    #         response.headers['token'] = jwt
-    #         return response
-
-    # return "账号或密码错误", 401  # 后端返回401状态码，前端收到后会自动跳到登陆页面
 
 
-# @app.route('/register', methods=['POST'])
-# def register():
-#     json_data = json.loads(request.get_data().decode("utf-8"))
-#     uname = json_data.get('username')
-#     email = json_data.get('email')
-#     upwd = json_data.get('password')
-#     code = json_data.get('code')
-#     if utils.mail.generate_code(email) != code:
-#         return '验证码错误', 403
-#     user = User.query.get(email)  # 主键查询
-#     if user is not None:
-#         return '邮箱已被注册', 403
-#     # sql = 'select email from user where email="' + email + '";'
-#     # result = db.session.execute(sql)
-#     # for user in result:
-#     #     if user is not None:
-#     #         return '邮箱已被注册', 403
-#     user = User(username=uname, password=upwd, email=email)
-#     db.session.add(user)
-#     db.session.commit()  # 因为外键，必须先commit register
-#     make_log(userEmail=email, log='欢迎加入AIDrug')
-#     return login()
-#
-#
-# @app.route('/changePSW', methods=['POST'])
-# def changePSW():
-#     json_data = json.loads(request.get_data().decode("utf-8"))
-#     email = json_data.get('email')
-#     upwd = json_data.get('password')
-#     code = json_data.get('code')
-#     if utils.mail.generate_code(email) != code:
-#         return '验证码错误', 403
-#     user = User.query.get(email)  # 主键查询
-#     if user is None:
-#         return '邮箱未被注册', 403
-#     user.password = upwd
-#     db.session.commit()
-#     return login()
-#
-#
-# @app.route('/get_verify_code', methods=['POST'])
-# def get_verify_code():
-#     json_data = json.loads(request.get_data())
-#     email = json_data.get('email')
-#     if_send = utils.mail.send_verify_code(receiver=email)
-#     if if_send:
-#         return '验证码发送成功', 200
-#     return '验证码发送失败', 500
-#
-#
-# @app.route('/test_mysql', methods=['GET', 'POST'])
-# def test():
-#     if request.method == 'POST':
-#         print('进入TEST_POST方法')
-#         use = User(username='hah', password='123', email='heih@asd')
-#         db.session.add(use)
-#         db.session.commit()
-#         return "进入TEST_POST方法"
-#     elif request.method == 'GET':
-#         print('进入TEST_GET方法')
-#         # sql = 'select * from user'
-#         # result = db.session.execute(sql)
-#         # for i in result:
-#         #     print(i.username)
-#         users = User.query.all()
-#         print('用户们的名称：')
-#         for i in users:
-#             print(i.username)
-#         return "进入TEST_GET方法"
-#     pass
-#
-#
-# @app.route('/test_token', methods=['POST'])
-# def test_token():
-#     if request.method == 'POST':
-#         pass
-#
-#
-# @app.route('/format_file', methods=['GET'])
-# def format_file():
-#     if g.user_email == 'no user_email':
-#         return "请登陆", 401
-#     direct = '/Users/panliang/Documents/湖南大学/本科/毕业设计/flask-backend'
-#     return send_from_directory(directory=direct, filename='format_file.txt', as_attachment=True)
-#
-#
-# @app.route('/drug_dict_file', methods=['GET'])
-# def drug_dict_file():
-#     if g.user_email == 'no user_email':
-#         return "请登陆", 401
-#     direct = '/Users/panliang/Documents/湖南大学/本科/毕业设计/flask-backend/algorithm/dataset'
-#     return send_from_directory(directory=direct, filename='drug_dict.txt', as_attachment=True)
-#
-#
-# @app.route('/getLog', methods=['POST'])
-# def getLog():
-#     if g.user_email == 'no user_email':
-#         return "请登陆", 401
-#     # json_data = json.loads(request.get_data())
-#     # email = json_data.get('email')
-#     email = g.user_email
-#     print('getLog_email:', email)
-#     sql = 'select * from log where userEmail="' + email + '";'
-#     result = db.session.execute(sql)
-#     json_data = []
-#     for row in result:
-#         data = {'date': str(row[3]), 'log': str(row[2]), 'userEmail': str(row[1])}
-#         json_data.append(data)
-#     print('json.dumps', json.dumps(json_data))
-#     return json.dumps(json_data)
+@app.route('/invention')
+def getInventionsByCompanyId():
+    companyId = request.args.get('id')
+    sql = 'select * from invention where applyPerson="' + companyId + '";'
+    result = db.session.execute(sql)
+    ret = []
+    for invention in result:
+        temp = {
+            'id': invention.id,
+            'name': invention.name,
+            'filingDate': str(invention.applyDate),
+            'status': invention.lawStatus,
+            'abstract': invention.abstract,
+            'fullText': invention.fullText,
+            'inventionPerson': invention.inventor
+        }
+        ret.append(temp)
+    return jsonify(ret)
+
+
+@app.route('/inventionDetail')
+def getInventionDetail():
+    inventionId = request.args.get('id')
+    result = Invention.query.get(inventionId)
+    data = {'id': result.id, 'name': result.name,
+            'filingDate': str(result.applyDate),
+            'applyPerson': result.applyPerson,
+            'inventionPerson': result.inventor, 'status': result.lawStatus,
+            'abstract': result.abstract,
+            'fullText': result.fullText,
+            'publishDate': str(result.publishDate)}
+    # print(jsonify(data))
+    return jsonify(data)
+
+
+@app.route('/stock')
+def getStocksByCompanyId():
+    companyId = request.args.get('id')
+    sql = 'select * from stock where companyId="' + companyId + '";'
+    result = db.session.execute(sql)
+    ret = []
+    for stock in result:
+        if len(str(stock.investor)) > 5:
+            isPerson = False
+        else:
+            isPerson = True
+        temp = {
+            'isPerson': isPerson,
+            'id': stock.id,
+            'name': stock.investor,
+            'money': stock.capital,
+            'percent': stock.percent,
+            'date': str(stock.date)
+        }
+        ret.append(temp)
+    return jsonify(ret)
+
+
+@app.route('/change')
+def getChangesByCompanyId():
+    companyId = request.args.get('id')
+    sql = 'select * from `change` where companyId="' + companyId + '";'
+    result = db.session.execute(sql)
+    ret = []
+    for change in result:
+        temp = {
+            'date': str(change.date),
+            'changeItem': change.changeItem,
+            'beforeChange': change.beforeChange,
+            'afterChange': change.afterChange
+        }
+        ret.append(temp)
+    return jsonify(ret)
+
+
+@app.route('/financing')
+def getFinancingByCompanyId():
+    companyId = request.args.get('id')
+    sql = 'select * from invest where companyId="' + companyId + '";'
+    result = db.session.execute(sql)
+    ret = []
+    for invest in result:
+        content = []
+        if invest.round:
+            content.append('轮次：' + invest.round)
+        if invest.investor:
+            content.append('投资者：' + invest.investor)
+        if invest.capital:
+            content.append(invest.capital)
+        if invest.FA:
+            content.append(invest.FA)
+        temp = {
+            'title': str(invest.date),
+            'content': content
+        }
+        ret.append(temp)
+    return jsonify(ret)
+
+
+@app.route('/customer')
+def getCustomersByCompanyId():
+    companyId = request.args.get('id')
+    sql = 'select * from client where companyId="' + companyId + '";'
+    result = db.session.execute(sql)
+    ret = []
+    for client in result:
+        temp = {
+            'id': client.id,
+            'name': client.name,
+            'picture': client.picture,
+            'introduction': client.introduction
+        }
+        ret.append(temp)
+    return jsonify(ret)
+
+
+@app.route('/legalCase')
+def getLegalCasesByCompanyId():
+    companyId = request.args.get('id')
+    sql = 'select * from legalcase where companyId="' + companyId + '";'
+    result = db.session.execute(sql)
+    ret = []
+    for legalcase in result:
+        temp = {
+            'id': legalcase.id,
+            'judgeDate': str(legalcase.judgeDate),
+            'caseName': legalcase.caseName,
+            'caseNumber': legalcase.caseNumber,
+            'publishDate': str(legalcase.publishDate),
+            'reason': legalcase.reason,
+            'role': legalcase.role,
+            'result': legalcase.result,
+            'money': legalcase.money,
+            'court': legalcase.court
+        }
+        ret.append(temp)
+    return jsonify(ret)
+
+
+@app.route('/getFinance')
+# 经营状况-公司财务
+def getFinanceByCompanyId():
+    companyId = request.args.get('id')
+    sql = 'select * from finance where companyId="' + companyId + '";'
+    result = db.session.execute(sql)
+    ret = []
+    for finance in result:
+        temp = {
+            'id': finance.id,
+            "year": finance.year,
+            "turnover": finance.turnover,
+            "profits": finance.profits
+        }
+        ret.append(temp)
+    return jsonify(ret)
+
+
+@app.route('/getEmploy')
+# 经营状况-招聘信息
+def getEmployByCompanyId():
+    companyId = request.args.get('id')
+    sql = 'select * from employ where companyId="' + companyId + '";'
+    result = db.session.execute(sql)
+    ret = []
+    for employ in result:
+        temp = {
+            "id": employ.id,
+            "date": str(employ.date),
+            "position": employ.position,
+            "salary": employ.salary,
+            "education": employ.education,
+            "workExperience": employ.workExperience,
+            "region": employ.region
+        }
+        ret.append(temp)
+    return jsonify(ret)
+
+
+@app.route('/getQualification')
+# 经营状况-资质证书
+def getQualificationByCompanyId():
+    companyId = request.args.get('id')
+    sql = 'select * from qualification where companyId="' + companyId + '";'
+    result = db.session.execute(sql)
+    ret = []
+    for qualification in result:
+        temp = {
+            "id": qualification.id,
+            "startDate": str(qualification.StartDate),
+            "type": qualification.type,
+            "productName": qualification.productName,
+            "number": qualification.number,
+            "endDate": str(qualification.endDate)
+        }
+        ret.append(temp)
+    return jsonify(ret)
+
+
+@app.route('/getAdmin')
+# 经营状况-行政许可
+def getAdminByCompanyId():
+    companyId = request.args.get('id')
+    sql = 'select * from adminlicense where companyId="' + companyId + '";'
+    result = db.session.execute(sql)
+    ret = []
+    for adminlicense in result:
+        temp = {
+            "id": adminlicense.id,
+            "fileNumber": adminlicense.fileNumber,
+            "department": adminlicense.department,
+            "startDate": str(adminlicense.StartDate),
+            "endDate": str(adminlicense.endDate),
+            "content": adminlicense.content
+        }
+        ret.append(temp)
+    return jsonify(ret)
+
+
+@app.route('/product')
+# 经营状况-行政许可
+def getProductsByCompanyId():
+    companyId = request.args.get('id')
+    sql = 'select * from product where companyId="' + companyId + '";'
+    result = db.session.execute(sql)
+    ret = []
+    for product in result:
+        temp = {
+            "id": product.id,
+            "name": product.name,
+            "picture": product.picture,
+            "introduction": product.introduction
+        }
+        ret.append(temp)
+    return jsonify(ret)
+
+
+@app.route('/team')
+def getTeamByCompanyId():
+    companyId = request.args.get('id')
+    sql = 'select person.id id, name,position,picture,introduction from team,person' \
+          ' where companyId="' + companyId + '" and team.personId = person.id; '
+    print('sql: ', sql)
+    result = db.session.execute(sql)
+    ret = []
+    for person in result:
+        temp = {
+            'id': person.id,
+            'name': person.name,
+            'position': person.position,
+            'picture': person.picture,
+            'introduction': person.introduction
+        }
+        ret.append(temp)
+    return jsonify(ret)
 
 
 if __name__ == '__main__':

@@ -113,8 +113,8 @@ class Change(db.Model):
     date = db.Column(db.Date)
     changeItem = db.Column(db.String(100))
     companyId = db.Column(db.String(30), db.ForeignKey('company.id'))
-    beforeChange = db.Column(db.String(255))
-    afterChange = db.Column(db.String(255))
+    beforeChange = db.Column(db.Text())
+    afterChange = db.Column(db.Text())
 
 #产品服务表
 class Product(db.Model):
@@ -152,6 +152,7 @@ class Qualification(db.Model):
     type = db.Column(db.String(30))
     number = db.Column(db.String(40))  #证书编号
     endDate = db.Column(db.Date)
+    productName = db.Column(db.String(255))
 
 #招聘信息表
 class Employ(db.Model):
@@ -214,8 +215,8 @@ class LegalCase(db.Model):
     caseName = db.Column(db.String(100))
     caseNumber = db.Column(db.String(30))
     reason = db.Column(db.String(200))
-    role = db.Column(db.String(20))
-    result = db.Column(db.Date)
+    role = db.Column(db.Text())
+    result = db.Column(db.Text())
     money = db.Column(db.String(20))
     court = db.Column(db.String(30))
     publishDate = db.Column(db.Date)
