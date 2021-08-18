@@ -18,6 +18,7 @@ from dao import config
 from dao.exts import db
 from dao.models import Company, Invention
 import time
+import os.path
 
 app = Flask(__name__)
 # 加载配置文件
@@ -29,6 +30,7 @@ app.debug = True
 # if user login correctly,
 # - g.user_email isn't the default value 'no user_email'
 app.before_request(jwt_authentication)
+invention_pdf_path = '/invention_pdf'
 
 
 # def make_log(userEmail, log):
@@ -386,6 +388,15 @@ def getTeamByCompanyId():
         }
         ret.append(temp)
     return jsonify(ret)
+
+
+@app.route('/invention_pdf')
+def getInventionPDFByInventionId():
+    inventionId = request.args.get('id')
+    filename = inventionId + '.pdf'
+    if not os.path.isfile(invention_pdf_path + '/' + filename):
+        return '文件不存在：' + invention_pdf_path + '/' + filename
+    return send_from_directory(directory=invention_pdf_path, path=filename, as_attachment=False)
 
 
 if __name__ == '__main__':
