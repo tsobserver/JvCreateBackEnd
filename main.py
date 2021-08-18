@@ -68,26 +68,31 @@ def hotSearch():
 @app.route('/search')
 def search():
     searchValue = request.args.get('searchValue')
-    if not searchValue or searchValue == '':
+    # 搜索内容判空或空格
+    if not searchValue or searchValue == '' or searchValue.isspace():
         return hotSearch()
-    searchValue = '"%' + searchValue + '%"'
     match_rule = 'company.id=team.companyId and ' \
-                 'team.personId=person.id and ' \
-                 '(' \
-                 f'field like {searchValue} or ' \
-                 f'company.name like {searchValue} or ' \
-                 f'firstTag like {searchValue} or ' \
-                 f'secondTag like {searchValue} or ' \
-                 f'thirdTag like {searchValue} or ' \
-                 f'address like {searchValue} or ' \
-                 f'financing like {searchValue} or ' \
-                 f'person.name like {searchValue} ' \
-                 ')'
+                 'team.personId=person.id '
+    # 如果 searchValue 是一个以空格分割的列表，则将每一项作为并列搜索条件
+    searchValueList = searchValue.split(' ')
+    for value in searchValueList:
+        value = '"%' + value + '%"'
+        match_rule = match_rule + ' and (' \
+                                  f'field like {value} or ' \
+                                  f'company.name like {value} or ' \
+                                  f'firstTag like {value} or ' \
+                                  f'secondTag like {value} or ' \
+                                  f'thirdTag like {value} or ' \
+                                  f'address like {value} or ' \
+                                  f'financing like {value} or ' \
+                                  f'person.name like {value} ' \
+                                  ')'
     sql = f'select distinct company.* from company,team,person where {match_rule} order by searchCount desc'
     result = db.session.execute(sql)
     data = []
     for company in result:
-        temp = {'id': company.id, 'companyName': company.name, 'field': company.field, 'formDate': str(company.formDate),
+        temp = {'id': company.id, 'companyName': company.name, 'field': company.field,
+                'formDate': str(company.formDate),
                 'registeredCapital': company.registeredCapital,
                 'tel': company.tel, 'inventionRating': company.InventionRating, 'webSite': company.webSite,
                 'legalPersonType': company.legalPersonType,
