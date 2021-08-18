@@ -68,6 +68,8 @@ def hotSearch():
 @app.route('/search')
 def search():
     searchValue = request.args.get('searchValue')
+    if not searchValue or searchValue == '':
+        return hotSearch()
     searchValue = '"%' + searchValue + '%"'
     match_rule = 'company.id=team.companyId and ' \
                  'team.personId=person.id and ' \
@@ -77,13 +79,15 @@ def search():
                  f'firstTag like {searchValue} or ' \
                  f'secondTag like {searchValue} or ' \
                  f'thirdTag like {searchValue} or ' \
+                 f'address like {searchValue} or ' \
+                 f'financing like {searchValue} or ' \
                  f'person.name like {searchValue} ' \
                  ')'
-    sql = f'select company.* from company,team,person where {match_rule} order by searchCount desc'
+    sql = f'select distinct company.* from company,team,person where {match_rule} order by searchCount desc'
     result = db.session.execute(sql)
     data = []
     for company in result:
-        temp = {'id': company.id, 'companyName': company.name, 'field': company.field, 'formDate': company.formDate,
+        temp = {'id': company.id, 'companyName': company.name, 'field': company.field, 'formDate': str(company.formDate),
                 'registeredCapital': company.registeredCapital,
                 'tel': company.tel, 'inventionRating': company.InventionRating, 'webSite': company.webSite,
                 'legalPersonType': company.legalPersonType,
