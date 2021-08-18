@@ -50,19 +50,46 @@ def hotSearch():
     result = db.session.execute(sql)
     data = []
     for company in result:
-        # 求 invention_count
-        invention_count = 0
-        sql = 'select count(DISTINCT invention.id) num from invention where applyPerson="' + company.id + '";'
-        result = db.session.execute(sql).first()
-        if result and result[0]:
-            invention_count = result[0]
         temp = {'id': company.id, 'companyName': company.name, 'field': company.field, 'formDate': company.formDate,
                 'registeredCapital': company.registeredCapital,
                 'tel': company.tel, 'inventionRating': company.InventionRating, 'webSite': company.webSite,
                 'legalPersonType': company.legalPersonType,
                 'legalPerson': company.legalPerson, 'registerStatus': company.registeredStatus, 'CEO': company.CEO,
                 'manager': company.manager,
-                'inventionCount': invention_count,
+                'inventionCount': company.inventionCount,
+                'address': company.address, 'businessScope': company.businessScope,
+                'introduction': company.introduction, 'financing': company.financing,
+                'firstTag': company.firstTag, 'secondTag': company.secondTag, 'thirdTag': company.thirdTag,
+                'searchCount': company.searchCount, 'companyPic': company.logo}
+        data.append(temp)
+    return jsonify(data)
+
+
+@app.route('/search')
+def search():
+    searchValue = request.args.get('searchValue')
+    searchValue = '"%' + searchValue + '%"'
+    match_rule = 'company.id=team.companyId and ' \
+                 'team.personId=person.id and ' \
+                 '(' \
+                 f'field like {searchValue} or ' \
+                 f'company.name like {searchValue} or ' \
+                 f'firstTag like {searchValue} or ' \
+                 f'secondTag like {searchValue} or ' \
+                 f'thirdTag like {searchValue} or ' \
+                 f'person.name like {searchValue} ' \
+                 ')'
+    sql = f'select company.* from company,team,person where {match_rule} order by searchCount desc'
+    result = db.session.execute(sql)
+    data = []
+    for company in result:
+        temp = {'id': company.id, 'companyName': company.name, 'field': company.field, 'formDate': company.formDate,
+                'registeredCapital': company.registeredCapital,
+                'tel': company.tel, 'inventionRating': company.InventionRating, 'webSite': company.webSite,
+                'legalPersonType': company.legalPersonType,
+                'legalPerson': company.legalPerson, 'registerStatus': company.registeredStatus, 'CEO': company.CEO,
+                'manager': company.manager,
+                'inventionCount': company.inventionCount,
                 'address': company.address, 'businessScope': company.businessScope,
                 'introduction': company.introduction, 'financing': company.financing,
                 'firstTag': company.firstTag, 'secondTag': company.secondTag, 'thirdTag': company.thirdTag,
@@ -80,17 +107,11 @@ def getCompanyById():
     # 增加一次访问量
     company.searchCount = company.searchCount + 1
     db.session.commit()
-    # 求发明数
-    inventionNum = 0
-    sql = 'select count(DISTINCT invention.id) num from invention where applyPerson="' + companyId + '";'
-    result = db.session.execute(sql).first()
-    if result and result[0]:
-        inventionNum = result[0]
     data = {'id': company.id, 'companyName': company.name, 'major': company.field,
             'companyRegisterDate': str(company.formDate),
             'companyRegisterMoney': company.registeredCapital,
             'phone': company.tel, 'level': company.InventionRating,
-            'website': company.webSite, 'inventionNum': inventionNum,
+            'website': company.webSite, 'inventionNum': company.inventionCount,
             'legalPersonType': company.legalPersonType,
             'legalPerson': company.legalPerson,
             'registerStatus': company.registeredStatus, 'CEO': company.CEO,
