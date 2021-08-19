@@ -7,7 +7,7 @@
 
 
 from flask import Flask, g, send_from_directory, jsonify
-from flask import request
+from flask import request, abort
 from string import Template
 from utils.middlewares import jwt_authentication
 import json
@@ -395,7 +395,7 @@ def getInventionPDFByInventionId():
     inventionId = request.args.get('id')
     filename = inventionId + '.pdf'
     if not os.path.isfile(invention_pdf_path + '/' + filename):
-        return '文件不存在：' + invention_pdf_path + '/' + filename
+        return abort(404)
     return send_from_directory(directory=invention_pdf_path, path=filename, as_attachment=False)
 
 
