@@ -17,9 +17,10 @@ from flask import make_response
 from dao import config
 from dao.exts import db
 from dao.models import Company, Invention
+import requests
 import time
 import os.path
-
+from secret import appSecret
 app = Flask(__name__)
 # 加载配置文件
 app.config.from_object(config)
@@ -30,7 +31,9 @@ app.debug = True
 # if user login correctly,
 # - g.user_email isn't the default value 'no user_email'
 app.before_request(jwt_authentication)
+appId = 'wx9b920bb75dbff842'
 invention_pdf_path = '/invention_pdf'
+
 
 
 # def make_log(userEmail, log):
@@ -389,6 +392,21 @@ def getTeamByCompanyId():
         ret.append(temp)
     return jsonify(ret)
 
+@app.route('/wxLogin')
+def wxLogin():
+    code = request.args.get('code')
+    req_params = {
+        "appid": appId,  # 小程序的 ID
+        "secret": appSecret,  # 小程序的 secret
+        "js_code": code,
+        "grant_type": 'authorization_code'
+    }
+    reqResult = requests.get('https://api.weixin.qq.com/sns/jscode2session',
+                               params=req_params, timeout=3, verify=False)
+    info = reqResult.json()
+    token = jwt_util.create_token(info['openid'],info['session_key'])
+    print(info)
+    return jsonify(token)
 
 @app.route('/invention_pdf')
 def getInventionPDFByInventionId():
