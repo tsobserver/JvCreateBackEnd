@@ -16,7 +16,7 @@ from utils import jwt_util
 from flask import make_response
 from dao import config
 from dao.exts import db
-from dao.models import Company, Invention, Collect
+from dao.models import Company, Invention, Collect, User
 import requests
 import time
 import os.path
@@ -34,7 +34,6 @@ app.debug = True
 app.before_request(jwt_authentication)
 appId = 'wx9b920bb75dbff842'
 invention_pdf_path = '/invention_pdf'
-
 
 # def make_log(userEmail, log):
 #     tmp_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
@@ -406,7 +405,13 @@ def wxLogin():
                              params=req_params, timeout=3, verify=False)
     info = reqResult.json()
     token = jwt_util.create_token(info['openid'], info['session_key'])
-    print(info)
+    open_id = info['openid']
+    # 通过 open_id 查询数据库，如果匹配则返回，如果没有匹配则添加
+    # 微信用户无需保存 nickName 和 userAvatar
+    user = User.query.get(open_id)
+    if not user:
+        db.session.add(User(id=open_id))
+        db.session.commit()
     return jsonify(token)
 
 
@@ -418,20 +423,22 @@ def getInventionPDFByInventionId():
         return abort(404)
     return send_from_directory(directory=invention_pdf_path, path=filename, as_attachment=False)
 
+
 @app.route('/collect')
 def collect():
     companyId = request.args.get('companyId')
-    userId = jwt_util.verify_jwt(request.headers.get('token')).open_id
-    collect = Collect(companyId,userId)
+    userId = g.user_id
+    collect = Collect(companyId, userId)
     db.session.add(collect)
     db.session.commit()
     return
 
+
 @app.route('/cancelCollect')
 def cancelCollect():
     companyId = request.args.get('companyId')
-    userId = jwt_util.verify_jwt(request.headers.get('token')).open_id
-    collect = Collect(companyId,userId)
+    userId = g.userId
+    collect = Collect(companyId, userId)
     db.session.delete(collect)
     db.session.commit()
     return
@@ -439,9 +446,8 @@ def cancelCollect():
 
 @app.route('/getCollectById')
 def getCollectById():
-
-    userId = jwt_util.verify_jwt(request.headers.get('token')).open_id
-    sql = 'select * from company where companyId in (select companyId from collect where userId = " ' + userId + '")'
+    userId = g.user_id
+    sql = 'select * from company where id in (select companyId from collect where userId = " ' + userId + '");'
     result = db.session.execute(sql)
     ret = []
     for company in result:
@@ -459,5 +465,7 @@ def getCollectById():
                 }
         ret.append(temp)
     return jsonify(ret)
+
+
 if __name__ == '__main__':
     app.run()

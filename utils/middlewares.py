@@ -16,12 +16,17 @@ def jwt_authentication():
     3.使用jwt模块进行校验
     4.判断校验结果,成功就提取token中的载荷信息,赋值给g对象保存
     """
-    g.user_email = 'no user_email'
+    g.user_id = 'no user_id'
     token = request.headers.get('Authorization')
     "校验token"
     payload = jwt_util.verify_jwt(token)
 
     "判断token的校验结果"
-    if payload and int(time.time()) < payload.get('exp'):
+    if payload and payload['open_id']:
+        # 这是微信登陆
+        g.user_id = payload['open_id']
+
+    elif payload and int(time.time()) < payload.get('exp'):
         "获取载荷中的信息赋值给g对象"
-        g.user_email = payload.get('email')
+        # 这是手机号登陆
+        g.user_id = payload.get('id')

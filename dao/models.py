@@ -225,5 +225,5 @@ class LegalCase(db.Model):
 #收藏关系表
 class Collect(db.Model):
     __tablename__ = 'collect'
-    companyId = db.Column(db.String(40),db.ForeignKey('company.id'),rimary_key=True)
-    userId = db.Column(db.String(40),db.ForeignKey('user.id'),rimary_key=True)
+    companyId = db.Column(db.String(40), db.ForeignKey('company.id'), primary_key=True)
+    userId = db.Column(db.String(40), db.ForeignKey('user.id'), primary_key=True)
