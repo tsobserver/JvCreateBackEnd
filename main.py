@@ -16,7 +16,7 @@ from utils import jwt_util
 from flask import make_response
 from dao import config
 from dao.exts import db
-from dao.models import Company, Invention
+from dao.models import Company, Invention, Collect
 import requests
 import time
 import os.path
@@ -416,6 +416,46 @@ def getInventionPDFByInventionId():
         return abort(404)
     return send_from_directory(directory=invention_pdf_path, path=filename, as_attachment=False)
 
+@app.route('/collect')
+def collect():
+    companyId = request.args.get('companyId')
+    userId = jwt_util.verify_jwt(request.headers.get('token')).open_id
+    collect = Collect(companyId,userId)
+    db.session.add(collect)
+    db.session.commit()
+    return
 
+@app.route('/cancelCollect')
+def cancelCollect():
+    companyId = request.args.get('companyId')
+    userId = jwt_util.verify_jwt(request.headers.get('token')).open_id
+    collect = Collect(companyId,userId)
+    db.session.delete(collect)
+    db.session.commit()
+    return
+
+
+@app.route('/getCollectById')
+def getCollectById():
+
+    userId = jwt_util.verify_jwt(request.headers.get('token')).open_id
+    sql = 'select * from company where companyId in (select companyId from collect where userId = " ' + userId + '")'
+    result = db.session.execute(sql)
+    ret = []
+    for company in result:
+        temp = {'id': company.id, 'companyName': company.name, 'field': company.field, 'formDate': company.formDate,
+                'registeredCapital': company.registeredCapital,
+                'tel': company.tel, 'inventionRating': company.InventionRating, 'webSite': company.webSite,
+                'legalPersonType': company.legalPersonType,
+                'legalPerson': company.legalPerson, 'registerStatus': company.registeredStatus, 'CEO': company.CEO,
+                'manager': company.manager,
+                'inventionCount': company.inventionCount,
+                'address': company.address, 'businessScope': company.businessScope,
+                'introduction': company.introduction, 'financing': company.financing,
+                'firstTag': company.firstTag, 'secondTag': company.secondTag, 'thirdTag': company.thirdTag,
+                'searchCount': company.searchCount, 'companyPic': company.logo
+                }
+        ret.append(temp)
+    return jsonify(ret)
 if __name__ == '__main__':
     app.run()
