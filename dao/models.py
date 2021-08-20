@@ -15,11 +15,11 @@ from .exts import db
 
 
 # 用户表
-# class User(db.Model):
-#     __tablename__ = 'user'
-#     email = db.Column(db.String(30), primary_key=True)
-#     username = db.Column(db.String(30))
-#     password = db.Column(db.String(20))
+class User(db.Model):
+    __tablename__ = 'user'
+    id = db.Column(db.String(40), primary_key=True)
+    nickName = db.Column(db.String(50))
+    userAvatar = db.Column(db.String(255))
 #
 #
 # # Log表
@@ -221,3 +221,9 @@ class LegalCase(db.Model):
     money = db.Column(db.String(20))
     court = db.Column(db.String(30))
     publishDate = db.Column(db.Date)
+
+#收藏关系表
+class Collect(db.Model):
+    __tablename__ = 'collect'
+    companyId = db.Column(db.String(40),db.ForeignKey('company.id'),rimary_key=True)
+    userId = db.Column(db.String(40),db.ForeignKey('user.id'),rimary_key=True)
