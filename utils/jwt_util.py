@@ -35,10 +35,11 @@ def verify_jwt(token, secret='secret'):
     return payload
 
 
-def create_token(email):
+def create_token(open_id,session_key):
     payload = {
         "iat": int(time.time()),
         "exp": int(time.time()) + 60*30,
-        "email": email
+        "open_id": open_id,
+        "session_key": session_key
     }
     return jwt.encode(payload, 'secret')
