@@ -19,9 +19,10 @@ def jwt_authentication():
     g.user_id = 'no user_id'
     token = request.headers.get('Authorization')
     "校验token"
+    print('token:', token)
     payload = jwt_util.verify_jwt(token)
-
     "判断token的校验结果"
+    print('payload:', payload)
     if payload and payload['open_id']:
         # 这是微信登陆
         g.user_id = payload['open_id']
@@ -30,3 +31,4 @@ def jwt_authentication():
         "获取载荷中的信息赋值给g对象"
         # 这是手机号登陆
         g.user_id = payload.get('id')
+    print('user_id:', g.user_id)

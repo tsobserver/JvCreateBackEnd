@@ -120,13 +120,24 @@ def getCompanyById():
     # 增加一次访问量
     company.searchCount = company.searchCount + 1
     db.session.commit()
+
+    # 判断是否该用户收藏了该公司
+    isFollow = False
+    userId = g.user_id
+    if not userId == 'no user_id':
+        # 用户已经登陆 判断是否收藏
+        sql = f'select * from collect where companyId = "{company.id}" and userId = "{userId}";'
+        result = db.session.execute(sql).fetchall()
+        if len(result):
+            isFollow = True
+    print('是否关注？', isFollow)
     data = {'id': company.id, 'companyName': company.name, 'major': company.field,
             'companyRegisterDate': str(company.formDate),
             'companyRegisterMoney': company.registeredCapital,
             'phone': company.tel, 'level': company.InventionRating,
             'website': company.webSite, 'inventionNum': company.inventionCount,
             'legalPersonType': company.legalPersonType,
-            'legalPerson': company.legalPerson,
+            'legalPerson': company.legalPerson, 'isFollow': isFollow,
             'registerStatus': company.registeredStatus, 'CEO': company.CEO,
             'manager': company.manager, 'address': company.address,
             'businessScope': company.businessScope, 'introduction': company.introduction,
@@ -404,7 +415,7 @@ def wxLogin():
     reqResult = requests.get('https://api.weixin.qq.com/sns/jscode2session',
                              params=req_params, timeout=3, verify=False)
     info = reqResult.json()
-    token = jwt_util.create_token(info['openid'], info['session_key'])
+    token = jwt_util.create_wx_token(info['openid'], info['session_key'])
     open_id = info['openid']
     # 通过 open_id 查询数据库，如果匹配则返回，如果没有匹配则添加
     # 微信用户无需保存 nickName 和 userAvatar
@@ -426,28 +437,27 @@ def getInventionPDFByInventionId():
 
 @app.route('/collect')
 def collect():
-    companyId = request.args.get('companyId')
+    companyId = request.args.get('id')
     userId = g.user_id
-    collect = Collect(companyId, userId)
-    db.session.add(collect)
+    db.session.add(Collect(userId=userId, companyId=companyId))
     db.session.commit()
-    return
+    return '200 OK'
 
 
 @app.route('/cancelCollect')
 def cancelCollect():
-    companyId = request.args.get('companyId')
-    userId = g.userId
-    collect = Collect(companyId, userId)
+    companyId = request.args.get('id')
+    userId = g.user_id
+    collect = Collect.query.filter_by(userId=userId, companyId=companyId).first()
     db.session.delete(collect)
     db.session.commit()
-    return
+    return '200 OK'
 
 
 @app.route('/getCollectById')
 def getCollectById():
     userId = g.user_id
-    sql = 'select * from company where id in (select companyId from collect where userId = " ' + userId + '");'
+    sql = f'select * from company where id in (select companyId from collect where userId = "{userId}");'
     result = db.session.execute(sql)
     ret = []
     for company in result:
