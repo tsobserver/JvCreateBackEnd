@@ -21,6 +21,8 @@ import requests
 import time
 import os.path
 from secret import appSecret
+from utils.SMS import sendVerifyCode
+from utils.cache_phone_code import check_phone_code
 
 app = Flask(__name__)
 # 加载配置文件
@@ -424,6 +426,32 @@ def wxLogin():
         db.session.add(User(id=open_id))
         db.session.commit()
     return jsonify(token)
+
+
+@app.route('/getVerifyCode')
+def getVerifyCode():
+    phone = request.args.get('phone')
+    if sendVerifyCode(phone=phone):
+        return 'send verify code success'
+    else:
+        abort(404)
+
+
+@app.route('/phoneLogin')
+def phoneLogin():
+    phone = request.args.get('phone')
+    code = request.args.get('code')
+    if check_phone_code(phone=phone, code=code):
+        # 认证成功，登陆成功
+        # phone number 为 user_id
+        user = User.query.get(phone)
+        if not user:
+            db.session.add(User(id=phone))
+            db.session.commit()
+        token = jwt_util.create_phone_token(phone=phone)
+        return jsonify(token)
+    else:
+        abort(401)
 
 
 @app.route('/invention_pdf')
