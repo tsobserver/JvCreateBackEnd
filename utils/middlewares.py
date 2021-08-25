@@ -23,12 +23,12 @@ def jwt_authentication():
     payload = jwt_util.verify_jwt(token)
     "判断token的校验结果"
     print('payload:', payload)
-    if payload and payload['open_id']:
+    if payload and payload.get('open_id'):
         # 这是微信登陆
         g.user_id = payload['open_id']
 
     elif payload and int(time.time()) < payload.get('exp'):
         "获取载荷中的信息赋值给g对象"
         # 这是手机号登陆
-        g.user_id = payload.get('id')
+        g.user_id = payload.get('phone')
     print('user_id:', g.user_id)
