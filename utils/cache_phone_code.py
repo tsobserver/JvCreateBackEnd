@@ -63,3 +63,7 @@ def check_phone_code(phone: str, code: str):
             cache_dic.pop(phone)
         return True
     return False
+
+# 由于使用了 gunicorn 部署 flask，以全局变量共享内存会有问题
+# 需要在 gunicorn 配置文件里写明单进程，worker = 1
+# 并发则设置线程数，比如 threads = 10
