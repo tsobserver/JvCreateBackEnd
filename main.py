@@ -23,6 +23,7 @@ import os.path
 from secret import appSecret
 from utils.SMS import sendVerifyCode
 from utils.cache_phone_code import check_phone_code
+from utils.sort_rule import key_company, key_stock
 
 app = Flask(__name__)
 # 加载配置文件
@@ -45,6 +46,8 @@ invention_pdf_path = '/invention_pdf'
 #     pass
 
 # for test
+
+
 @app.route('/')
 def index():
     return "Hello World"
@@ -52,6 +55,7 @@ def index():
 
 @app.route('/hotSearch')
 def hotSearch():
+    # 先通过搜索次逆序、再通过发明评级逆序
     sql = 'select * from company order by searchCount desc limit 28'
     result = db.session.execute(sql)
     data = []
@@ -68,6 +72,7 @@ def hotSearch():
                 'firstTag': company.firstTag, 'secondTag': company.secondTag, 'thirdTag': company.thirdTag,
                 'searchCount': company.searchCount, 'companyPic': company.logo}
         data.append(temp)
+    data.sort(key=key_company, reverse=True)
     return jsonify(data)
 
 
@@ -110,6 +115,7 @@ def search():
                 'firstTag': company.firstTag, 'secondTag': company.secondTag, 'thirdTag': company.thirdTag,
                 'searchCount': company.searchCount, 'companyPic': company.logo}
         data.append(temp)
+    data.sort(key=key_company, reverse=True)
     return jsonify(data)
 
 
@@ -204,6 +210,7 @@ def getStocksByCompanyId():
             'date': str(stock.date)
         }
         ret.append(temp)
+    ret.sort(key=key_stock, reverse=True)
     return jsonify(ret)
 
 
