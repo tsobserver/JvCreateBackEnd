@@ -82,23 +82,23 @@ def search():
     # 搜索内容判空或空格
     if not searchValue or searchValue == '' or searchValue.isspace():
         return hotSearch()
-    match_rule = 'company.id=team.companyId and ' \
-                 'team.personId=person.id '
+    match_rule = '1'
     # 如果 searchValue 是一个以空格分割的列表，则将每一项作为并列搜索条件
+    #  发现bug、联表查询时，若公司无团队信息，则搜索不到
     searchValueList = searchValue.split(' ')
     for value in searchValueList:
         value = '"%' + value + '%"'
-        match_rule = match_rule + ' and (' \
+        match_rule = match_rule + ' and ( ' \
                                   f'field like {value} or ' \
-                                  f'company.name like {value} or ' \
+                                  f'company.`name` like {value} or ' \
                                   f'firstTag like {value} or ' \
                                   f'secondTag like {value} or ' \
                                   f'thirdTag like {value} or ' \
                                   f'address like {value} or ' \
                                   f'financing like {value} or ' \
-                                  f'person.name like {value} ' \
+                                  f'person.`name` like {value} ' \
                                   ')'
-    sql = f'select distinct company.* from company,team,person where {match_rule} order by searchCount desc'
+    sql = f'select distinct company.* from company LEFT JOIN team ON company.id=team.companyId LEFT JOIN person ON team.personId=person.id where {match_rule} order by searchCount desc'
     result = db.session.execute(sql)
     data = []
     for company in result:
